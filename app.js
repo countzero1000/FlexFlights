@@ -5,6 +5,15 @@ const Express = require('express');
 const User = require('./models/user');
 const Order = require('./models/order');
 const bodyParser = require('body-parser');
+const Twilio = require('twilio');
+
+var accountSid = 'AC1a81c53afa40a9386e61e993dc946d80';
+var authToken = 'ceb58961f06b00eea14f3e54e5d8815d';
+
+
+var client = new Twilio(accountSid,authToken);
+
+
 
 
 const mongoUri = 'mongodb+srv://Admin:kf4kRtV3ElyyBQle@cluster0-asawa.gcp.mongodb.net/test?retryWrites=true&w=majority';
@@ -60,13 +69,19 @@ checkInRange = (order, flight) => {
     let endDate = convertDateToObject(order.endDate);
     let flightDate = convertDateToObject(flight.date);
 
-    if (flightDate.year <= endDate.year && flightDate.year >= startDate.year) {
-        if (flightDate.month <= endDate.month && flightDate.month >= startDate.month) {
-            if (flightDate.day <= endDate.day && flightDate.day >= startDate.day) {
-                return flight;
-            }
-        }
+    startDate = new Date(startDate.year,startDate.month,startDate.day);
+    endDate = new Date(endDate.year,endDate.month,endDate.day);
+    flightDate = new Date(flightDate.year,flightDate.month,flightDate.day);
+
+    
+
+    
+
+    if(startDate.getTime()<=flightDate.getTime() && endDate.getTime()>=flightDate.getTime()){
+        return true
     }
+
+    return false;
 
 }
 
@@ -205,6 +220,16 @@ let startDate = {
 }
 
 
+arrayContains = (arr, search) =>{
+
+    arr.forEach((item)=>{
+        if(toString(item) === toString(search)) return true;
+    })
+
+    return false;
+
+}
+
 saveFlight = (flight) => {
 
 
@@ -259,6 +284,49 @@ app.get('/readNewFlightData', (req, res) => {
     readInNewFlights(startDate);
     res.send('process starting');
 })
+
+app.get('/messageUsers', async (req,res)=>{
+
+    let flights = await Flight.find({});
+    let orders = await Order.find({});
+    
+    let users = [];
+    
+    for(flight of flights){
+        for(order of orders){
+
+          if((flight.destination == order.destination ) && (flight.origin == order.origin) && (checkInRange(order,flight))){
+     
+                let user = await User.findById(order.user);
+                let index = users.map((user)=>{return user.email}).indexOf(user.email);
+
+                if( index == -1){
+
+                    user.flights = [];
+                    flights.push(flight);
+                    users.push(user);
+    
+                }else{
+                    users[index].flights.push(flight);
+                }
+
+            }
+        }
+    }
+
+   for( user of users){
+
+       await client.messages.create({
+            body: 'You have available flex flights!',
+            to : "+17372031941",
+            from : '+19382385489'
+        }).then((message)=>console.log(message.sid)).catch((err)=>{console.log(err)});
+    }
+
+    res.send('messages sent')
+
+})
+
 
 
 
@@ -327,9 +395,11 @@ app.get('/getOrders', async (req,res)=>{
             let validFlight = []
             
             flights.forEach((flight)=>{
+
                 if(checkInRange(order,flight)){
                     validFlight.push(flight);
                 }
+
             })
 
             return validFlight
