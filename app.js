@@ -282,6 +282,7 @@ readInNewFlights = async (startDate) => {
 app.get('/readNewFlightData', (req, res) => {
 
     readInNewFlights(startDate);
+    res.header('Access-Control-Allow-Origin', '*');
     res.send('process starting');
 })
 
@@ -322,7 +323,7 @@ app.get('/messageUsers', async (req,res)=>{
             from : '+19382385489'
         }).then((message)=>console.log(message.sid)).catch((err)=>{console.log(err)});
     }
-
+    res.header('Access-Control-Allow-Origin', '*');
     res.send('messages sent')
 
 })
@@ -342,10 +343,12 @@ app.post('/createUser', (req, res) => {
     })
 
     newUser.save();
-
+    res.header('Access-Control-Allow-Origin', '*');
     res.send(userId);
 
 })
+
+
 
 app.post('/createOrder',(req,res)=>{
 
@@ -363,6 +366,7 @@ app.post('/createOrder',(req,res)=>{
 
     })
 
+    res.header('Access-Control-Allow-Origin', '*');
     newOrder.save();
     res.send(newOrder);
 
@@ -420,6 +424,7 @@ app.get('/getOrders', async (req,res)=>{
 
     console.log(viewOrders);
 
+    res.header('Access-Control-Allow-Origin', '*');
     res.send(viewOrders);
 })
 
