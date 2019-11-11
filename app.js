@@ -7,16 +7,16 @@ const Order = require('./models/order');
 const bodyParser = require('body-parser');
 const Twilio = require('twilio');
 
-var accountSid = 'AC1a81c53afa40a9386e61e993dc946d80';
-var authToken = 'ceb58961f06b00eea14f3e54e5d8815d';
+//var accountSid = { actual stuff would go here }
+//var authToken =  { acutal stuff would go here}
 
 
-var client = new Twilio(accountSid,authToken);
+var client = new Twilio(accountSid, authToken);
 
 
 
 
-const mongoUri = 'mongodb+srv://Admin:kf4kRtV3ElyyBQle@cluster0-asawa.gcp.mongodb.net/test?retryWrites=true&w=majority';
+const mongoUri = 'mongodb+srv://Admin:PASSWORD@cluster0-asawa.gcp.mongodb.net/test?retryWrites=true&w=majority';
 const mongoOptions = {
     useUnifiedTopology: true,
     useNewUrlParser: true
@@ -69,15 +69,15 @@ checkInRange = (order, flight) => {
     let endDate = convertDateToObject(order.endDate);
     let flightDate = convertDateToObject(flight.date);
 
-    startDate = new Date(startDate.year,startDate.month,startDate.day);
-    endDate = new Date(endDate.year,endDate.month,endDate.day);
-    flightDate = new Date(flightDate.year,flightDate.month,flightDate.day);
+    startDate = new Date(startDate.year, startDate.month, startDate.day);
+    endDate = new Date(endDate.year, endDate.month, endDate.day);
+    flightDate = new Date(flightDate.year, flightDate.month, flightDate.day);
 
-    
 
-    
 
-    if(startDate.getTime()<=flightDate.getTime() && endDate.getTime()>=flightDate.getTime()){
+
+
+    if (startDate.getTime() <= flightDate.getTime() && endDate.getTime() >= flightDate.getTime()) {
         return true
     }
 
@@ -220,10 +220,10 @@ let startDate = {
 }
 
 
-arrayContains = (arr, search) =>{
+arrayContains = (arr, search) => {
 
-    arr.forEach((item)=>{
-        if(toString(item) === toString(search)) return true;
+    arr.forEach((item) => {
+        if (toString(item) === toString(search)) return true;
     })
 
     return false;
@@ -259,7 +259,7 @@ saveFlight = (flight) => {
 readInNewFlights = async (startDate) => {
 
 
-    Mongoose.connection.db
+    /*Mongoose.connection.db
         .listCollections()
         .toArray((err, items) => {
             if (err) console.log(err)
@@ -268,15 +268,15 @@ readInNewFlights = async (startDate) => {
                 .indexOf('flights') != -1) {
                 Mongoose.connection.db.dropCollection('flights');
             }
-        })
+        })*/
 
-    console.log("connected!!");
 
-    let flights = await getFlightsForWeek(startDate);
 
-    await Promise.all(flights.map(saveFlight));
-
-    console.log("done saving")
+     let flights = await getFlightsForWeek(startDate);
+ 
+     await Promise.all(flights.map(saveFlight));
+ 
+     console.log("done saving");
 }
 
 app.get('/readNewFlightData', (req, res) => {
@@ -286,43 +286,46 @@ app.get('/readNewFlightData', (req, res) => {
     res.send('process starting');
 })
 
-app.get('/messageUsers', async (req,res)=>{
+app.get('/messageUsers', async (req, res) => {
 
-    let flights = await Flight.find({});
-    let orders = await Order.find({});
-    
-    let users = [];
-    
-    for(flight of flights){
-        for(order of orders){
-
-          if((flight.destination == order.destination ) && (flight.origin == order.origin) && (checkInRange(order,flight))){
+    /* let flights = await Flight.find({});
+     let orders = await Order.find({});
      
-                let user = await User.findById(order.user);
-                let index = users.map((user)=>{return user.email}).indexOf(user.email);
+     let users = [];
+     
+     for(flight of flights){
+         for(order of orders){
+ 
+           if((flight.destination == order.destination ) && (flight.origin == order.origin) && (checkInRange(order,flight))){
+      
+                 let user = await User.findById(order.user);
+ 
+                 console.log(user);
+ 
+                 let index = users.map((user)=>{return user.email}).indexOf(user.email);
+ 
+                 if( index == -1){
+ 
+                     user.flights = [];
+                     flights.push(flight);
+                     users.push(user);
+     
+                 }else{
+                     users[index].flights.push(flight);
+                 }
+ 
+             }
+         }
+     }
+ */
+    //for( user of users){
 
-                if( index == -1){
-
-                    user.flights = [];
-                    flights.push(flight);
-                    users.push(user);
-    
-                }else{
-                    users[index].flights.push(flight);
-                }
-
-            }
-        }
-    }
-
-   for( user of users){
-
-       await client.messages.create({
-            body: 'You have available flex flights!',
-            to : "+17372031941",
-            from : '+19382385489'
-        }).then((message)=>console.log(message.sid)).catch((err)=>{console.log(err)});
-    }
+    await client.messages.create({
+        body: 'You have available flex flights!',
+        to: "+17372031941",
+        from: '+19382385489'
+    }).then((message) => console.log(message.sid)).catch((err) => { console.log(err) });
+    //}
     res.header('Access-Control-Allow-Origin', '*');
     res.send('messages sent')
 
@@ -350,19 +353,19 @@ app.post('/createUser', (req, res) => {
 
 
 
-app.post('/createOrder',(req,res)=>{
+app.post('/createOrder', (req, res) => {
 
-    let endDate = convertDate(incrementDayX(convertDateToObject(req.body.startDate),30));
+    let endDate = convertDate(incrementDayX(convertDateToObject(req.body.startDate), 30));
 
 
     let newOrder = new Order({
 
-        _id : new Mongoose.Types.ObjectId,
-        startDate : req.body.startDate,
+        _id: new Mongoose.Types.ObjectId,
+        startDate: req.body.startDate,
         endDate: endDate,
-        origin : req.body.origin,
+        origin: req.body.origin,
         destination: req.body.destination,
-        user : req.body.userId
+        user: req.body.userId
 
     })
 
@@ -372,55 +375,55 @@ app.post('/createOrder',(req,res)=>{
 
 })
 
-app.get('/getOrders', async (req,res)=>{
+app.get('/getOrders', async (req, res) => {
 
     let userId = req.query.userId;
-    
-    let orders = await Order.find({user:userId},(err,orders)=>{
-        if(err) res.send(err);
+
+    let orders = await Order.find({ user: userId }, (err, orders) => {
+        if (err) res.send(err);
         else
-        return orders
+            return orders
     })
 
 
     let viewOrders = [];
 
-    for(let i = 0; i < orders.length; i++){
+    for (let i = 0; i < orders.length; i++) {
 
         let order = orders[i]
-        
-    
+
+
 
         let flights = await Flight
-        .find({origin:order.origin,destination:order.destination},(err,flights)=>{
+            .find({ origin: order.origin, destination: order.destination }, (err, flights) => {
 
-            if(err) console.log(err);
+                if (err) console.log(err);
 
-            let validFlight = []
-            
-            flights.forEach((flight)=>{
+                let validFlight = []
 
-                if(checkInRange(order,flight)){
-                    validFlight.push(flight);
-                }
+                flights.forEach((flight) => {
+
+                    if (checkInRange(order, flight)) {
+                        validFlight.push(flight);
+                    }
+
+                })
+
+                return validFlight
 
             })
 
-            return validFlight
-
-        })
-
         let viewOrder = {
-            startDate : order.startDate,
-            endDate : order.endDate,
-            origin : order.origin,
-            destination : order.destination,
-            user : order.user,
-            flights : flights
+            startDate: order.startDate,
+            endDate: order.endDate,
+            origin: order.origin,
+            destination: order.destination,
+            user: order.user,
+            flights: flights
         }
 
         viewOrders.push(viewOrder);
-    }   
+    }
 
     console.log(viewOrders);
 
